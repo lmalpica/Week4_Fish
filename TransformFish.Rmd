@@ -1,0 +1,80 @@
+---
+title: 'Transforming Data'
+author: "Dr. Luis Malpica"
+date: "February, 2020"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    theme: united
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+# Background
+You will again import and manipulate fish data. These were observations on different small coral reefs in the Caribbean. You need to estimate the total number of fish on any given date, per site, per species smaller than 20cm TL. You have three distinct data sets to do so, the first one 'FishAb.csv' contains counts and total lenght of fish per species and transect number; 'FishAbTrscts.csv' contains different type of data, specifically: Date of observation, site name/code, number of dive, name of observer, number of transect per site, time of dive, reef depth, temperature in C, benthic substrate of transect, weather conditions, visibility in ft, and current conditions; 'SppCodes.csv' has common names and a numeric code for every species. You would need to combine the three data sets by their common variables to be able to link all data used and estimate the total number of fish per date, sites, and species. 
+
+Goals:
+1)	Add a new Rmarkdown script to your existing RProject - GitHub repository 
+2)	Load & explore the three new data sets: FishAb.csv, FishAbTrscts.csv, & SppCodes.csv
+3)  Join useful data sets to have species comon name, sites & date (FishAb.csv & FishAbTrscts.csv)
+>>> Hint: remember '_join' functions in dplyr for this)
+
+4)  Create a summary table where we sum up all fish observations (counts or frequencies) per date, site and species common name 
+>>> (Hint: I recommend you follow this order of variables and use 'summarise' and 'group_by')
+
+# Install required packages
+```{r, message=FALSE}
+# If you don't yet have tidyverse run:
+# install.packages("tidyverse")
+library(tidyverse)
+```
+
+# Load & Tidy data
+```{r}
+#Clean up as start of R session
+rm(list = ls())
+
+#Read and manipulate some data#### 
+#For Community Metrics use this code
+FishData <- read.table("data/FishAb.csv",sep=",", header=T)
+TransData <- read.table("data/FishAbTrscts.csv",sep=",", header=T)
+SppCodes <- read.table("data/SppCodes.csv",sep=",", header=T)
+
+str(FishData)
+str(TransData)
+str(SppCodes)
+
+#I think that the t3rd data set is not really useful in this exercise, so I will just ingore it
+
+#Remove larger than 20 TL entries (beyond certain predator gap limit)
+FishData <- filter(FishData, TL <= 20)
+
+#We can now try to join SpCodes and SpNames data sets
+FishData <- left_join(FishData, TransData, by = "Transect")
+str(FishData)
+str(TransData)
+#Opps...mmmm seems that each data set have a different name variable for the common name variable
+
+#Lets use the same Transect name variable
+TransData <- rename(TransData, Transect = TransectNum) 
+#2nd attempt to join SpCodes and SpNames data sets
+FishData <- left_join(FishData, TransData, by = "Transect")
+str(FishData)
+#It seems it worked this time =)
+
+#Great! Now it is time to manipulate this to create a summary table, while in this case it will just be a few lines I would go to a different R chunck for cleanliness
+
+```
+
+# Data Manipulation
+```{r}
+#OK lets 
+
+FishSumm <- summarise(group_by(FishData, Date, Site, ComName),
+                   SumCatch = sum(Freq))
+Nice!!
+```
+
+

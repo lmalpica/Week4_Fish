@@ -1,0 +1,106 @@
+---
+title: 'Tidying Data'
+author: "Dr. Luis Malpica"
+date: "February, 2020"
+output:
+  html_document:
+    theme: united
+    toc: yes
+  pdf_document:
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introduction
+You will look at one table with messy data  your task is to make it tidy in R
+
+OK, now let's do some basic manipulations:
+
+With this initial data set you will end up with data on comon names of fish species and counts. The main goal is that you need to work only with data from 2011, also, drop the month column as all these were taken on December so yo do not need that column. 
+
+Goals:
+1)	Create a GitHub repository and link it to a new R Project
+2)	Create the necessary subfolders and description files
+3)	Create a new Rmarkdown file (annotate & comment as necessary)
+4)	Import, explore and if necessary clean up the main data set provided (i.e. import to R, verify types of data, data structure, rename variables, etc.): "CompDec2011_2015.csv" hint: remember 'read.csv'
+>>> Challenge: This file has a couple of bugs, hint: you can fix them on excel or explore the 'na.strings' option of 'read.csv'
+
+5)	Eliminate all the rows that have no values (hint: use the na.strings option of read.csv)
+6)	Transform from wide to long format
+7)  One of your new columns will have two values, the first corresponds to a site #, the second to a year, split this column and name appropriately (hint, use: names_sep = "\\." within your pivot function)
+8) You need to select data from 2011 only (hint: remember 'filter'?)
+9) You need to select all but the month column (hint: remember 'select'?)
+>>> Challenge: pipe it out!
+
+# Install required packages
+```{r, message=FALSE}
+# If you don't yet have tidyverse run:
+# install.packages("tidyverse")
+library(tidyverse)
+```
+
+# Load & Tidy data
+```{r}
+#Clean up as start of R session
+rm(list = ls())
+
+#Load data
+MessyData <- read.csv("data/CompDec2011_2015.csv")
+
+#Explore your data
+str(MessyData)
+#I would change the variable name of first column
+MessyData <- rename(MessyData, CommName = DISTINCT.SPP.LIST) 
+str(MessyData)
+#Also, something looks odd on two columns
+is(MessyData$X119.2011)
+is(MessyData$E3.2011)
+is.factor(MessyData$X119.2011)
+is.factor(MessyData$E3.2011)
+#There are some character values on these two columns
+
+#You can choose to go ahead and try to go to longer format regardless and see what happens:
+#1st Attempt to go from Wide to long format
+TidyData <- pivot_longer(MessyData, X119.2011:X84.2015, names_to = "Site.Year", values_to = "Counts") 
+#Error points to the different types of data were have so better to remove those character values:
+
+#It may be best to handle this issue on import using the na.strings option of read.csv
+#This will replace all "missing" entries wit NA
+MessyData <- read.csv("data/CompDec2011_2015.csv", na.strings = "missing")
+MessyData <- rename(MessyData, CommName = DISTINCT.SPP.LIST) 
+str(MessyData)
+
+#2nd Attempt to go from Wide to long format
+TidyData <- pivot_longer(MessyData, X119.2011:X84.2015, names_to = "Site.Year", values_to = "Counts") 
+str(TidyData)
+head(TidyData)
+
+#It worked fine this time, but also need to split in two columns Site and Year
+#I would try a 3rd time and split the column from the pivot function:
+#You can also drop all rows that do not have any value
+TidyData <- MessyData %>% pivot_longer(cols = X119.2011:X84.2015,
+                                      names_to = c("Site", "Year"), 
+                                      names_sep = "\\.",
+                                      values_to = "Counts",
+                                      values_drop_na = TRUE) 
+str(TidyData) # Check data structure
+head(TidyData)
+#Nice!
+```
+
+# Simple Data Manipulation
+```{r}
+#OK lets use filter and select to work only with data from 2011 and drop the month column/variable
+#Let's pipe it out since there are two functions combined
+TidyData <- TidyData %>% filter(Year == 2011) %>% select(-Month)
+#Make sure we succeded
+unique(TidyData$Year)
+str(TidyData)
+head(TidyData)
+TidyData
+#Yesss!!!
+
+
+```
+
